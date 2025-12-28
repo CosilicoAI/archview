@@ -17,11 +17,21 @@ interface Document {
 
 interface DocumentViewerProps {
   document: Document
+  onBack?: () => void
+  totalDocs?: number
+  currentIndex?: number
+  onNavigate?: (index: number) => void
 }
 
 type ViewMode = 'split' | 'statute' | 'rac'
 
-export function DocumentViewer({ document }: DocumentViewerProps) {
+export function DocumentViewer({
+  document,
+  onBack,
+  totalDocs,
+  currentIndex,
+  onNavigate,
+}: DocumentViewerProps) {
   const [highlightedSection, setHighlightedSection] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('split')
 
@@ -39,13 +49,40 @@ export function DocumentViewer({ document }: DocumentViewerProps) {
     <div className={styles.container}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.logo}>
-          <span className={styles.logoAccent}>{'{'}</span>
-          Arch
-          <span className={styles.logoAccent}>{'}'}</span>
+        <div className={styles.headerLeft}>
+          {onBack && (
+            <button className={styles.backButton} onClick={onBack} title="Back to browser">
+              ←
+            </button>
+          )}
+          <div className={styles.logo}>
+            <span className={styles.logoAccent}>{'{'}</span>
+            Arch
+            <span className={styles.logoAccent}>{'}'}</span>
+          </div>
         </div>
 
-        <div className={styles.citation}>{document.citation}</div>
+        <div className={styles.headerCenter}>
+          {onNavigate && currentIndex !== undefined && totalDocs && (
+            <button
+              className={styles.navButton}
+              onClick={() => onNavigate(Math.max(0, currentIndex - 1))}
+              disabled={currentIndex === 0}
+            >
+              ‹
+            </button>
+          )}
+          <div className={styles.citation}>{document.citation}</div>
+          {onNavigate && currentIndex !== undefined && totalDocs && (
+            <button
+              className={styles.navButton}
+              onClick={() => onNavigate(Math.min(totalDocs - 1, currentIndex + 1))}
+              disabled={currentIndex === totalDocs - 1}
+            >
+              ›
+            </button>
+          )}
+        </div>
 
         <div className={styles.viewToggle}>
           <button

@@ -28,6 +28,60 @@ export const header = style({
   animation: `${fadeIn} 0.4s ease-out`,
 })
 
+export const headerLeft = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.md,
+})
+
+export const headerCenter = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: vars.space.sm,
+})
+
+export const backButton = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '32px',
+  height: '32px',
+  fontFamily: vars.font.mono,
+  fontSize: vars.fontSize.lg,
+  color: vars.color.textDim,
+  backgroundColor: vars.color.bg,
+  border: `1px solid ${vars.color.border}`,
+  borderRadius: vars.radius.sm,
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  ':hover': {
+    color: vars.color.accent,
+    borderColor: vars.color.accent,
+  },
+})
+
+export const navButton = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '28px',
+  height: '28px',
+  fontFamily: vars.font.mono,
+  fontSize: vars.fontSize.lg,
+  color: vars.color.textDim,
+  backgroundColor: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  ':hover': {
+    color: vars.color.accent,
+  },
+  ':disabled': {
+    opacity: 0.3,
+    cursor: 'not-allowed',
+  },
+})
+
 export const logo = style({
   display: 'flex',
   alignItems: 'center',
