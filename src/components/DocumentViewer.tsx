@@ -21,6 +21,7 @@ interface DocumentViewerProps {
   totalDocs?: number
   currentIndex?: number
   onNavigate?: (index: number) => void
+  onNavigateToPath?: (path: string) => void
 }
 
 type ViewMode = 'split' | 'statute' | 'rac'
@@ -31,6 +32,7 @@ export function DocumentViewer({
   totalDocs,
   currentIndex,
   onNavigate,
+  onNavigateToPath,
 }: DocumentViewerProps) {
   const [highlightedSection, setHighlightedSection] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('split')
@@ -175,6 +177,7 @@ export function DocumentViewer({
                       line={line}
                       lineNumber={index + 1}
                       highlighted={highlightedLines.includes(index + 1)}
+                      onNavigateToPath={onNavigateToPath}
                     />
                   ))}
                 </pre>
@@ -225,11 +228,12 @@ interface CodeLineProps {
   line: string
   lineNumber: number
   highlighted: boolean
+  onNavigateToPath?: (path: string) => void
 }
 
-function CodeLine({ line, highlighted }: CodeLineProps) {
-  // Apply syntax highlighting
-  const highlightedLine = highlightCode(line)
+function CodeLine({ line, highlighted, onNavigateToPath }: CodeLineProps) {
+  // Apply syntax highlighting with clickable imports
+  const highlightedLine = highlightCode(line, onNavigateToPath)
 
   return (
     <span className={`${styles.codeLine} ${highlighted ? styles.codeLineHighlighted : ''}`}>
@@ -239,16 +243,19 @@ function CodeLine({ line, highlighted }: CodeLineProps) {
   )
 }
 
-function highlightCode(line: string): React.ReactNode[] {
+function highlightCode(line: string, onNavigateToPath?: (path: string) => void): React.ReactNode[] {
   const tokens: React.ReactNode[] = []
   let remaining = line
   let key = 0
 
-  const patterns: [RegExp, string][] = [
+  // Import path pattern: matches things like "26/62/a#agi" or "7/2014/a"
+  const importPathPattern = /^(\d+\/[\w\/#]+)/
+
+  const patterns: [RegExp, string | null][] = [
     // Comments
     [/^(#.*)/, styles.codeComment],
     // Keywords
-    [/^(variable|parameter|formula|if|else|where|for|in|and|or|not|return)\b/, styles.codeKeyword],
+    [/^(variable|parameter|formula|if|else|where|for|in|and|or|not|return|imports)\b/, styles.codeKeyword],
     // Types
     [/^(Money|Rate|Boolean|Integer|Date|Person|TaxUnit|Household|Year|Month)\b/, styles.codeType],
     // Strings
@@ -262,17 +269,40 @@ function highlightCode(line: string): React.ReactNode[] {
   while (remaining.length > 0) {
     let matched = false
 
-    for (const [pattern, className] of patterns) {
-      const match = remaining.match(pattern)
-      if (match) {
-        tokens.push(
-          <span key={key++} className={className}>
-            {match[1]}
-          </span>
-        )
-        remaining = remaining.slice(match[1].length)
-        matched = true
-        break
+    // Check for import paths first (like 26/62/a#agi)
+    const importMatch = remaining.match(importPathPattern)
+    if (importMatch && onNavigateToPath) {
+      const path = importMatch[1]
+      tokens.push(
+        <span
+          key={key++}
+          className={styles.codeImportLink}
+          onClick={(e) => {
+            e.preventDefault()
+            onNavigateToPath(path)
+          }}
+          title={`Go to ${path}`}
+        >
+          {path}
+        </span>
+      )
+      remaining = remaining.slice(path.length)
+      matched = true
+    }
+
+    if (!matched) {
+      for (const [pattern, className] of patterns) {
+        const match = remaining.match(pattern)
+        if (match) {
+          tokens.push(
+            <span key={key++} className={className || undefined}>
+              {match[1]}
+            </span>
+          )
+          remaining = remaining.slice(match[1].length)
+          matched = true
+          break
+        }
       }
     }
 

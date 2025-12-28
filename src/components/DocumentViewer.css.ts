@@ -278,6 +278,19 @@ export const codeComment = style({
   fontStyle: 'italic',
 })
 
+export const codeImportLink = style({
+  color: vars.color.accent,
+  textDecoration: 'underline',
+  textDecorationStyle: 'dotted',
+  textUnderlineOffset: '2px',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  ':hover': {
+    color: vars.color.success,
+    textDecorationStyle: 'solid',
+  },
+})
+
 export const codeVariable = style({
   color: '#ff79c6',
 })

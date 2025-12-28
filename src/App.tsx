@@ -60,6 +60,7 @@ function transformToViewerDoc(rac: RacDocument): ViewerDocument {
 function App() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [showBrowser, setShowBrowser] = useState(true)
+  const [navigationHistory, setNavigationHistory] = useState<number[]>([])
 
   const documents = racsData.documents as RacDocument[]
 
@@ -67,6 +68,30 @@ function App() {
     () => transformToViewerDoc(documents[selectedIndex]),
     [documents, selectedIndex]
   )
+
+  // Navigate to a RAC by its import path (e.g., "26/62/a#agi" or "7/2014/a")
+  const handleNavigateToPath = (importPath: string) => {
+    // Remove the #variable part if present
+    const basePath = importPath.split('#')[0]
+
+    // Find a document whose path contains this import path
+    // Import: "26/62/a" should match path: "cosilico-us/statute/26/62/a.rac"
+    const foundIndex = documents.findIndex((doc) => {
+      const docPath = doc.path
+        .replace(/^cosilico-(us|ca)\/statute\//, '')
+        .replace(/\.(rac|cosilico)$/, '')
+      return docPath === basePath || docPath.startsWith(basePath + '/')
+    })
+
+    if (foundIndex !== -1) {
+      // Save current position to history for back navigation
+      setNavigationHistory((prev) => [...prev, selectedIndex])
+      setSelectedIndex(foundIndex)
+    } else {
+      // Could not find - maybe show a toast or console log
+      console.log(`Could not find RAC for path: ${importPath}`)
+    }
+  }
 
   return (
     <>
@@ -78,6 +103,7 @@ function App() {
             selectedIndex={selectedIndex}
             onSelect={(index) => {
               setSelectedIndex(index)
+              setNavigationHistory([])
               setShowBrowser(false)
             }}
             onClose={() => setShowBrowser(false)}
@@ -89,6 +115,7 @@ function App() {
             totalDocs={documents.length}
             currentIndex={selectedIndex}
             onNavigate={setSelectedIndex}
+            onNavigateToPath={handleNavigateToPath}
           />
         )}
       </div>
