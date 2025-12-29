@@ -1,7 +1,21 @@
 import { useState, useMemo } from 'react'
 import { motion } from 'motion/react'
 import * as styles from './DocumentBrowser.css'
-import type { ArchDocument } from '../App'
+// ArchDocument interface moved to static JSON mode
+interface ArchDocument {
+  id: string
+  jurisdiction: string
+  source: string
+  type: string
+  format: string
+  title: string
+  archPath: string | null
+  hasRac: boolean
+  racPath: string | null
+  citation: string | null
+  text: string | null
+  code: string | null
+}
 
 interface DocumentBrowserProps {
   documents: ArchDocument[]
