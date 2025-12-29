@@ -2,15 +2,22 @@ import { useState, useMemo } from 'react'
 import { DocumentViewer } from './components/DocumentViewer'
 import { DocumentBrowser } from './components/DocumentBrowser'
 import { gridBg, appContainer } from './styles/global.css'
-import racsData from './data/racs.json'
+import documentsData from './data/documents.json'
 
-// Transform RAC data to viewer format
-interface RacDocument {
-  citation: string
+// New unified document interface
+export interface ArchDocument {
+  id: string
+  jurisdiction: string
+  source: string
+  type: string
+  format: string
   title: string
-  text: string
-  code: string
-  path: string
+  archPath: string | null
+  hasRac: boolean
+  racPath: string | null
+  citation: string | null
+  text: string | null
+  code: string | null
 }
 
 interface ViewerDocument {
@@ -22,47 +29,63 @@ interface ViewerDocument {
     codeLines: number[]
   }>
   code: string
+  hasRac: boolean
+  format: string
+  jurisdiction: string
+  archPath: string | null
 }
 
-function transformToViewerDoc(rac: RacDocument): ViewerDocument {
-  // Parse the RAC text into subsections
+function transformToViewerDoc(doc: ArchDocument): ViewerDocument {
   const subsections: ViewerDocument['subsections'] = []
 
-  if (rac.text) {
-    // Split by paragraph or use as single block
-    const paragraphs = rac.text.split(/\n\n+/).filter(Boolean)
+  if (doc.text) {
+    const paragraphs = doc.text.split(/\n\n+/).filter(Boolean)
     paragraphs.forEach((para, i) => {
       subsections.push({
-        id: String.fromCharCode(97 + i), // a, b, c, etc.
+        id: String.fromCharCode(97 + i),
         text: para.trim(),
-        codeLines: [], // TODO: map to actual code lines
+        codeLines: [],
       })
     })
   }
 
   // If no text, create a subsection from the title
   if (subsections.length === 0) {
+    const message = doc.hasRac
+      ? doc.title || 'No statute text available for this section.'
+      : doc.format === 'xml'
+        ? 'XML statute - full text available in source file.'
+        : doc.format === 'pdf'
+          ? 'PDF document - open the source file to view content.'
+          : doc.title || 'No content preview available.'
+
     subsections.push({
       id: 'a',
-      text: rac.title || 'No statute text available for this section.',
+      text: message,
       codeLines: [],
     })
   }
 
   return {
-    citation: rac.citation,
-    title: rac.title,
+    citation: doc.citation || doc.id,
+    title: doc.title,
     subsections,
-    code: rac.code,
+    code: doc.code || '',
+    hasRac: doc.hasRac,
+    format: doc.format,
+    jurisdiction: doc.jurisdiction,
+    archPath: doc.archPath,
   }
 }
 
 function App() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [showBrowser, setShowBrowser] = useState(true)
-  const [navigationHistory, setNavigationHistory] = useState<number[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_navigationHistory, setNavigationHistory] = useState<number[]>([])
 
-  const documents = racsData.documents as RacDocument[]
+  const documents = documentsData.documents as ArchDocument[]
+  const stats = documentsData.stats as Record<string, number>
 
   const currentDoc = useMemo(
     () => transformToViewerDoc(documents[selectedIndex]),
@@ -71,25 +94,20 @@ function App() {
 
   // Navigate to a RAC by its import path (e.g., "26/62/a#agi" or "7/2014/a")
   const handleNavigateToPath = (importPath: string) => {
-    // Remove the #variable part if present
     const basePath = importPath.split('#')[0]
 
-    // Find a document whose path contains this import path
-    // Import: "26/62/a" should match path: "cosilico-us/statute/26/62/a.rac"
+    // Find a document whose id matches this import path
     const foundIndex = documents.findIndex((doc) => {
-      const docPath = doc.path
-        .replace(/^cosilico-(us|ca)\/statute\//, '')
-        .replace(/\.(rac|cosilico)$/, '')
+      // For US RAC documents, match against id like "us/26/62/a"
+      const docPath = doc.id.replace(/^us\//, '')
       return docPath === basePath || docPath.startsWith(basePath + '/')
     })
 
     if (foundIndex !== -1) {
-      // Save current position to history for back navigation
       setNavigationHistory((prev) => [...prev, selectedIndex])
       setSelectedIndex(foundIndex)
     } else {
-      // Could not find - maybe show a toast or console log
-      console.log(`Could not find RAC for path: ${importPath}`)
+      console.log(`Could not find document for path: ${importPath}`)
     }
   }
 
@@ -100,6 +118,7 @@ function App() {
         {showBrowser ? (
           <DocumentBrowser
             documents={documents}
+            stats={stats}
             selectedIndex={selectedIndex}
             onSelect={(index) => {
               setSelectedIndex(index)

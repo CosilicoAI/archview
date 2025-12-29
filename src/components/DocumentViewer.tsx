@@ -13,6 +13,10 @@ interface Document {
   title: string
   subsections: Subsection[]
   code: string
+  hasRac: boolean
+  format: string
+  jurisdiction: string
+  archPath: string | null
 }
 
 interface DocumentViewerProps {
@@ -35,17 +39,35 @@ export function DocumentViewer({
   onNavigateToPath,
 }: DocumentViewerProps) {
   const [highlightedSection, setHighlightedSection] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>('split')
+  // Default to 'statute' view for non-RAC documents
+  const [viewMode, setViewMode] = useState<ViewMode>(document.hasRac ? 'split' : 'statute')
 
   const handleSectionHover = useCallback((sectionId: string | null) => {
     setHighlightedSection(sectionId)
   }, [])
 
-  const codeLines = document.code.split('\n')
+  const codeLines = document.code ? document.code.split('\n') : []
 
   const highlightedLines = highlightedSection
     ? document.subsections.find((s) => s.id === highlightedSection)?.codeLines ?? []
     : []
+
+  // Get jurisdiction badge info
+  const getJurisdictionBadge = () => {
+    switch (document.jurisdiction) {
+      case 'canada':
+        return { text: '🍁 Canada', color: '#ff4444' }
+      case 'uk':
+        return { text: '🇬🇧 UK', color: '#00aaff' }
+      default:
+        if (document.jurisdiction.startsWith('us-')) {
+          return { text: `🇺🇸 ${document.jurisdiction.replace('us-', '').toUpperCase()}`, color: '#4488ff' }
+        }
+        return { text: '🇺🇸 US', color: '#4488ff' }
+    }
+  }
+
+  const jurisdictionBadge = getJurisdictionBadge()
 
   return (
     <div className={styles.container}>
@@ -93,18 +115,22 @@ export function DocumentViewer({
           >
             Statute
           </button>
-          <button
-            className={`${styles.viewButton} ${viewMode === 'split' ? styles.viewButtonActive : ''}`}
-            onClick={() => setViewMode('split')}
-          >
-            Split
-          </button>
-          <button
-            className={`${styles.viewButton} ${viewMode === 'rac' ? styles.viewButtonActive : ''}`}
-            onClick={() => setViewMode('rac')}
-          >
-            RAC
-          </button>
+          {document.hasRac && (
+            <>
+              <button
+                className={`${styles.viewButton} ${viewMode === 'split' ? styles.viewButtonActive : ''}`}
+                onClick={() => setViewMode('split')}
+              >
+                Split
+              </button>
+              <button
+                className={`${styles.viewButton} ${viewMode === 'rac' ? styles.viewButtonActive : ''}`}
+                onClick={() => setViewMode('rac')}
+              >
+                RAC
+              </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -123,7 +149,11 @@ export function DocumentViewer({
             >
               <div className={styles.panelHeader}>
                 <span className={styles.panelTitle}>
-                  <span className={styles.panelTitleAccent}>//</span> Statute Text
+                  <span className={styles.panelTitleAccent}>//</span>{' '}
+                  {document.format === 'xml' ? 'XML Statute' : document.format === 'pdf' ? 'PDF Document' : 'Statute Text'}
+                </span>
+                <span className={styles.jurisdictionBadge} style={{ color: jurisdictionBadge.color }}>
+                  {jurisdictionBadge.text}
                 </span>
               </div>
 
@@ -146,15 +176,23 @@ export function DocumentViewer({
                     </div>
                   </motion.div>
                 ))}
+
+                {/* Show source file path for non-RAC documents */}
+                {!document.hasRac && document.archPath && (
+                  <div className={styles.sourceInfo}>
+                    <span className={styles.sourceLabel}>Source file:</span>
+                    <code className={styles.sourcePath}>{document.archPath}</code>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
 
           {/* Divider */}
-          {viewMode === 'split' && <div className={styles.divider} />}
+          {viewMode === 'split' && document.hasRac && <div className={styles.divider} />}
 
-          {/* Code Panel */}
-          {(viewMode === 'split' || viewMode === 'rac') && (
+          {/* Code Panel - Only show for RAC documents */}
+          {document.hasRac && (viewMode === 'split' || viewMode === 'rac') && (
             <motion.div
               key="rac-panel"
               className={styles.panel}
@@ -195,8 +233,18 @@ export function DocumentViewer({
         </div>
         <div className={styles.statusItem}>
           <span>{document.subsections.length} subsections</span>
-          <span>|</span>
-          <span>{codeLines.length} lines</span>
+          {document.hasRac && (
+            <>
+              <span>|</span>
+              <span>{codeLines.length} lines of RAC</span>
+            </>
+          )}
+          {!document.hasRac && (
+            <>
+              <span>|</span>
+              <span>{document.format.toUpperCase()} source</span>
+            </>
+          )}
         </div>
       </footer>
     </div>

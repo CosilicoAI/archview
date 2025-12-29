@@ -335,3 +335,36 @@ export const statusDot = style({
   borderRadius: '50%',
   backgroundColor: vars.color.success,
 })
+
+export const jurisdictionBadge = style({
+  marginLeft: 'auto',
+  fontFamily: vars.font.mono,
+  fontSize: vars.fontSize.xs,
+  fontWeight: 500,
+})
+
+export const sourceInfo = style({
+  marginTop: vars.space.xl,
+  padding: vars.space.md,
+  backgroundColor: vars.color.bgElevated,
+  borderRadius: vars.radius.md,
+  border: `1px solid ${vars.color.border}`,
+})
+
+export const sourceLabel = style({
+  display: 'block',
+  fontFamily: vars.font.mono,
+  fontSize: vars.fontSize.xs,
+  color: vars.color.textMuted,
+  marginBottom: vars.space.xs,
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+})
+
+export const sourcePath = style({
+  display: 'block',
+  fontFamily: vars.font.mono,
+  fontSize: vars.fontSize.sm,
+  color: vars.color.accent,
+  wordBreak: 'break-all',
+})

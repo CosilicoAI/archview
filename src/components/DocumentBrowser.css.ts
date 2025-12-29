@@ -180,6 +180,55 @@ export const docPreview = style({
   WebkitBoxOrient: 'vertical',
 })
 
+export const statsBar = style({
+  display: 'flex',
+  gap: vars.space.sm,
+  padding: `${vars.space.sm} ${vars.space.lg}`,
+  backgroundColor: vars.color.bgElevated,
+  borderBottom: `1px solid ${vars.color.border}`,
+  overflowX: 'auto',
+})
+
+export const statButton = style({
+  padding: `${vars.space.xs} ${vars.space.md}`,
+  fontFamily: vars.font.mono,
+  fontSize: vars.fontSize.xs,
+  color: vars.color.textDim,
+  backgroundColor: 'transparent',
+  border: `1px solid ${vars.color.border}`,
+  borderRadius: vars.radius.md,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  transition: 'all 0.2s ease',
+  ':hover': {
+    color: vars.color.text,
+    borderColor: vars.color.accent,
+  },
+})
+
+export const statButtonActive = style({
+  color: vars.color.bg,
+  backgroundColor: vars.color.accent,
+  borderColor: vars.color.accent,
+  ':hover': {
+    color: vars.color.bg,
+    backgroundColor: vars.color.accent,
+    borderColor: vars.color.accent,
+  },
+})
+
+export const groupIcon = style({
+  fontSize: vars.fontSize.base,
+})
+
+export const docBadge = style({
+  fontFamily: vars.font.mono,
+  fontSize: vars.fontSize.xs,
+  fontWeight: 600,
+  letterSpacing: '0.05em',
+  opacity: 0.8,
+})
+
 export const footer = style({
   padding: `${vars.space.sm} ${vars.space.xl}`,
   backgroundColor: vars.color.bgElevated,
