@@ -80,7 +80,6 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
-  const [totalCount, setTotalCount] = useState(0)
 
   // Fetch jurisdiction stats
   useEffect(() => {
@@ -111,9 +110,10 @@ function App() {
     setError(null)
 
     try {
+      // Skip exact count to avoid timeout on large tables - use stats instead
       let query = supabase
         .from('rules')
-        .select('*', { count: 'exact' })
+        .select('*')
         .is('parent_id', null)
         .order('jurisdiction')
         .order('source_path')
@@ -124,15 +124,15 @@ function App() {
       }
 
       if (search) {
-        query = query.textSearch('search_vector', search, { type: 'websearch' })
+        query = query.textSearch('fts', search, { type: 'websearch' })
       }
 
-      const { data, error: fetchError, count } = await query
+      const { data, error: fetchError } = await query
 
       if (fetchError) throw fetchError
 
       setRules(append ? [...rules, ...(data || [])] : (data || []))
-      setTotalCount(count || 0)
+      // Use stats for total count instead of exact count
       setPage(pageNum)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch rules'
@@ -168,11 +168,20 @@ function App() {
     }
   }, [])
 
+  // Derive totalCount from stats based on current filter
+  const effectiveTotalCount = useMemo(() => {
+    if (jurisdictionFilter === 'us') return stats.us
+    if (jurisdictionFilter === 'uk') return stats.uk
+    if (jurisdictionFilter === 'canada') return stats.canada
+    return stats.total
+  }, [jurisdictionFilter, stats])
+
   const loadMore = useCallback(() => {
-    if (!loading && rules.length < totalCount) {
+    // Load more if we got a full page of results (there might be more)
+    if (!loading && rules.length > 0 && rules.length % PAGE_SIZE === 0) {
       fetchRules(page + 1, true)
     }
-  }, [loading, rules.length, totalCount, page, fetchRules])
+  }, [loading, rules.length, page, fetchRules])
 
   const currentDoc = useMemo(
     () => selectedRule ? transformRuleToViewerDoc(selectedRule, selectedChildren) : null,
@@ -193,7 +202,7 @@ function App() {
                 <span className={browserStyles.logoAccent}>{'}'}</span>
               </div>
               <div className={browserStyles.stats}>
-                {totalCount.toLocaleString()} of {stats.total.toLocaleString()} rules
+                {rules.length.toLocaleString()} of {effectiveTotalCount.toLocaleString()} rules
               </div>
             </header>
 
@@ -265,7 +274,7 @@ function App() {
                 </div>
               )}
 
-              {!loading && rules.length < totalCount && (
+              {!loading && rules.length > 0 && rules.length % PAGE_SIZE === 0 && (
                 <button
                   onClick={loadMore}
                   style={{
@@ -279,7 +288,7 @@ function App() {
                     marginTop: '0.5rem',
                   }}
                 >
-                  Load More ({rules.length} / {totalCount.toLocaleString()})
+                  Load More ({rules.length.toLocaleString()} loaded)
                 </button>
               )}
 
@@ -309,7 +318,7 @@ function App() {
         <DocumentViewer
           document={currentDoc!}
           onBack={() => setShowBrowser(true)}
-          totalDocs={totalCount}
+          totalDocs={effectiveTotalCount}
           currentIndex={rules.findIndex(r => r.id === selectedRule?.id)}
           onNavigate={(index) => {
             if (rules[index]) selectRule(rules[index])

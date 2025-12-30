@@ -77,7 +77,7 @@ export function useRules(options: UseRulesOptions = {}): UseRulesResult {
 
       if (search) {
         // Use full-text search
-        query = query.textSearch('search_vector', search, { type: 'websearch' })
+        query = query.textSearch('fts', search, { type: 'websearch' })
       }
 
       const { data, error: fetchError, count } = await query
