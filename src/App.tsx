@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { DocumentViewer } from './components/DocumentViewer'
+import { RuleTree } from './components/RuleTree'
 import { gridBg, appContainer } from './styles/global.css'
 import { supabase } from './lib/supabase'
 import type { Rule } from './lib/supabase'
@@ -80,6 +81,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
+  const [viewMode, setViewMode] = useState<'tree' | 'flat'>('tree')
 
   // Fetch jurisdiction stats
   useEffect(() => {
@@ -201,8 +203,24 @@ function App() {
                 Arch
                 <span className={browserStyles.logoAccent}>{'}'}</span>
               </div>
-              <div className={browserStyles.stats}>
-                {rules.length.toLocaleString()} of {effectiveTotalCount.toLocaleString()} rules
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button
+                  onClick={() => setViewMode(viewMode === 'tree' ? 'flat' : 'tree')}
+                  style={{
+                    background: 'rgba(0, 212, 255, 0.1)',
+                    border: '1px solid rgba(0, 212, 255, 0.3)',
+                    borderRadius: '4px',
+                    padding: '4px 12px',
+                    color: '#00d4ff',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                  }}
+                >
+                  {viewMode === 'tree' ? '🌲 Tree' : '📋 Flat'}
+                </button>
+                <div className={browserStyles.stats}>
+                  {rules.length.toLocaleString()} of {effectiveTotalCount.toLocaleString()} rules
+                </div>
               </div>
             </header>
 
@@ -252,21 +270,25 @@ function App() {
             )}
 
             <div className={browserStyles.content}>
-              {rules.map((rule) => (
-                <motion.button
-                  key={rule.id}
-                  className={browserStyles.docItem}
-                  onClick={() => selectRule(rule)}
-                  whileHover={{ x: 4 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <span className={browserStyles.docBadge} style={{ color: getJurisdictionColor(rule.jurisdiction) }}>
-                    {rule.jurisdiction.toUpperCase()}
-                  </span>
-                  <span className={browserStyles.docCitation}>{rule.source_path || rule.id}</span>
-                  <span className={browserStyles.docTitle}>{rule.heading || 'Untitled'}</span>
-                </motion.button>
-              ))}
+              {viewMode === 'tree' ? (
+                <RuleTree rules={rules} onSelect={selectRule} />
+              ) : (
+                rules.map((rule) => (
+                  <motion.button
+                    key={rule.id}
+                    className={browserStyles.docItem}
+                    onClick={() => selectRule(rule)}
+                    whileHover={{ x: 4 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <span className={browserStyles.docBadge} style={{ color: getJurisdictionColor(rule.jurisdiction) }}>
+                      {rule.jurisdiction.toUpperCase()}
+                    </span>
+                    <span className={browserStyles.docCitation}>{rule.source_path || rule.id}</span>
+                    <span className={browserStyles.docTitle}>{rule.heading || 'Untitled'}</span>
+                  </motion.button>
+                ))
+              )}
 
               {loading && (
                 <div style={{ padding: '1rem', textAlign: 'center', color: '#888' }}>
