@@ -10,7 +10,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Create client with arch schema as default
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  db: { schema: 'arch' }
+})
 
 // Expose for debugging
 ;(window as any).__SUPABASE__ = supabase
