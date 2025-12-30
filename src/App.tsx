@@ -87,17 +87,19 @@ function App() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [usResp, ukResp, canadaResp, totalResp] = await Promise.all([
+        const [usResp, ukResp, canadaResp] = await Promise.all([
           supabase.from('rules').select('*', { count: 'exact', head: true }).eq('jurisdiction', 'us'),
           supabase.from('rules').select('*', { count: 'exact', head: true }).eq('jurisdiction', 'uk'),
           supabase.from('rules').select('*', { count: 'exact', head: true }).eq('jurisdiction', 'canada'),
-          supabase.from('rules').select('*', { count: 'exact', head: true }),
         ])
+        const usCount = usResp.count || 0
+        const ukCount = ukResp.count || 0
+        const canadaCount = canadaResp.count || 0
         setStats({
-          us: usResp.count || 0,
-          uk: ukResp.count || 0,
-          canada: canadaResp.count || 0,
-          total: totalResp.count || 0,
+          us: usCount,
+          uk: ukCount,
+          canada: canadaCount,
+          total: usCount + ukCount + canadaCount,
         })
       } catch (err) {
         console.error('Failed to fetch stats:', err)
